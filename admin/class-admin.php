@@ -7,6 +7,7 @@ class Admin {
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('admin_post_run_scraper', [$this, 'handle_scraper_run']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
+        add_action('admin_menu', [$this, 'add_menu_page']);
     }
 
     public function add_admin_menu() {
@@ -88,5 +89,68 @@ class Admin {
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function add_menu_page() {
+        add_menu_page(
+            'WeScraper Settings',
+            'WeScraper',
+            'manage_options',
+            'wescraper-settings',
+            [$this, 'render_settings_page'],
+            'dashicons-admin-generic'
+        );
+    }
+
+    public function render_settings_page() {
+        ?>
+        <div class="wrap">
+            <h1>WeScraper Settings</h1>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields(Settings::OPTION_GROUP);
+                do_settings_sections(Settings::OPTION_GROUP);
+                ?>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">Tutor API Key</th>
+                        <td>
+                            <input type="text" name="tutor_api_key" 
+                                value="<?php echo esc_attr(Settings::get_api_key()); ?>" 
+                                class="regular-text">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Tutor API Secret</th>
+                        <td>
+                            <input type="password" name="tutor_api_secret" 
+                                value="<?php echo esc_attr(Settings::get_api_secret()); ?>" 
+                                class="regular-text">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">WordPress Application Password</th>
+                        <td>
+                            <input type="password" name="wp_app_password" 
+                                value="<?php echo esc_attr(Settings::get_app_password()); ?>" 
+                                class="regular-text">
+                            <p class="description">
+                                Generate this from WordPress Users → Profile → Application Passwords
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">API Base URL</th>
+                        <td>
+                            <input type="url" name="tutor_api_base_url" 
+                                value="<?php echo esc_url(Settings::get_api_base_url()); ?>" 
+                                class="regular-text">
+                        </td>
+                    </tr>
+                </table>
+                <?php submit_button(); ?>
+            </form>
+        </div>
+        <?php
     }
 } 

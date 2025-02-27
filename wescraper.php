@@ -38,8 +38,16 @@ spl_autoload_register(function ($class) {
 
 // Initialize plugin
 function wescraper_init() {
-    require_once WESCRAPER_PLUGIN_DIR . 'includes/class-init.php';
-    return WeScraper\Init::get_instance();
+    require_once WESCRAPER_PLUGIN_DIR . 'includes/class-settings.php';
+    require_once WESCRAPER_PLUGIN_DIR . 'admin/class-admin.php';
+    
+    // Initialize settings
+    WeScraper\Settings::init();
+    
+    // Initialize admin interface if in admin area
+    if (is_admin()) {
+        new WeScraper\Admin();
+    }
 }
 
 // Start the plugin

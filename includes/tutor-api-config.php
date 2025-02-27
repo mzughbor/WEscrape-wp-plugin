@@ -3,12 +3,14 @@ namespace WeScraper;
 
 class TutorAPIConfig {
     private $api_base_url;
-    private $api_token;
+    private $api_key;
+    private $api_secret;
     private $endpoints;
 
     public function __construct() {
-        $this->api_base_url = get_option('tutor_api_base_url', site_url('/wp-json/tutor/v1/'));
-        $this->api_token = get_option('tutor_api_token', '');
+        $this->api_base_url = Settings::get_api_base_url();
+        $this->api_key = Settings::get_api_key();
+        $this->api_secret = Settings::get_api_secret();
         $this->init_endpoints();
     }
 
@@ -44,7 +46,8 @@ class TutorAPIConfig {
     }
 
     public function get_token() {
-        return $this->api_token;
+        // Generate token using API key and secret if needed
+        return $this->api_key;
     }
 
     public function get_endpoint($type, $action = 'create', $id = null) {
@@ -72,8 +75,12 @@ class TutorAPIConfig {
     }
 
     public function validate_config() {
-        if (empty($this->api_token)) {
-            throw new \Exception('API token is not configured');
+        if (empty($this->api_key)) {
+            throw new \Exception('API key is not configured');
+        }
+
+        if (empty($this->api_secret)) {
+            throw new \Exception('API secret is not configured');
         }
 
         if (empty($this->api_base_url)) {

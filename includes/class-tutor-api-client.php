@@ -3,9 +3,11 @@ namespace WeScraper;
 
 class TutorAPIClient {
     private $config;
+    private $app_password;
 
     public function __construct() {
         $this->config = $this->load_config();
+        $this->app_password = Settings::get_app_password();
     }
 
     private function load_config() {
@@ -79,9 +81,9 @@ class TutorAPIClient {
             $args = [
                 'method' => $method,
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $this->config->get_token(),
                     'Content-Type' => 'application/json',
-                    'Accept' => 'application/json'
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Basic ' . base64_encode('admin:' . $this->app_password)
                 ],
                 'timeout' => 30,
                 'sslverify' => false // Only if needed for local development
@@ -94,7 +96,7 @@ class TutorAPIClient {
             $response = wp_remote_request($url, $args);
 
             if (is_wp_error($response)) {
-                throw new \Exception('API request failed: ' . $response->get_error_message());
+                throw new \Exception($response->get_error_message());
             }
 
             $status_code = wp_remote_retrieve_response_code($response);
