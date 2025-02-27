@@ -1,0 +1,63 @@
+.wescraper-wrap {
+    margin: 20px;
+}
+
+.wescraper-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    border-radius: 4px;
+}
+
+.wescraper-card h2 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.wescraper-status {
+    margin: 10px 0;
+    padding: 10px 15px;
+    border-left: 4px solid #46b450;
+    background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.wescraper-error {
+    border-left-color: #dc3232;
+}
+
+.wescraper-card table {
+    margin-top: 15px;
+}
+
+.wescraper-card .form-table th {
+    width: 200px;
+}
+
+.wescraper-loading {
+    position: relative;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.wescraper-loading:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+} 
