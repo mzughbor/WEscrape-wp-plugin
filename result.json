@@ -1,0 +1,86 @@
+{
+    "course_name": "Python programming language",
+    "category": "Programming",
+    "lesson_count": "15",
+    "description": "Python is a general-purpose coding language\u2014which means that, unlike HTML, CSS, and JavaScript, it can be used for other types of programming and software development besides web development. That includes back end development, software development, data science and writing system scripts among other things. Python is easy to learn. Its syntax is easy and code is very readable. ... Python allows you to write programs in fewer lines of code than most of the programming languages. The popularity of Python is growing rapidly. Python is an interpreted, object-oriented, high-level programming language with dynamic semantics. ... Python's simple, easy to learn syntax emphasizes readability and therefore reduces the cost of program maintenance. Python supports modules and packages, which encourages program modularity and code reuse. Apparently yes you can! First and foremost requirement to learn Python (within a month or not) is knowledge of coding and a little bit pro efficiency in any other language like C, C++, C#, Java etc. If you have the workable knowledge of any of these languages, you can learn Python in a month. There couldn't be a better time for you to join the world of Python! Learn Python In 3 Days :Step by Step Guide for Beginners to Advanced is the world's best-selling guide to the Python programming language. This fast-paced,Learn the fundamentals of Python and practice problems. 50 Jobs That Use Python The Most Software Engineer. Senior Software Engineer. Research Assistant. Software Developer. Graduate Research Assistant. Software Engineering Internship. Developer. Fortunately an experienced programmer in any programming language (whatever it may be) can pick up Python very quickly. It's also easy for beginners to use and learn, so jump in! It takes around 8 weeks to learn Python basics on average. This includes learning basic syntax, links if statements, loops, variables, functions, and data types Python is the perfect programming language for people without any coding experience. It has a simple syntax, which makes it very accessible to beginners. Scripts written in Python are \u201chuman-friendly\u201d: you can read Python code as you would read English commands",
+    "lessons": [
+        {
+            "title": "Python Crash Course For Beginners",
+            "link": "https://www.mindluster.com/lesson/566-video",
+            "duration": "01:35:47"
+        },
+        {
+            "title": "Python MySQL Crash Course",
+            "link": "https://www.mindluster.com/lesson/567-video",
+            "duration": "00:24:39"
+        },
+        {
+            "title": "Build A Python Speech Assistant App",
+            "link": "https://www.mindluster.com/lesson/568-video",
+            "duration": "00:26:47"
+        },
+        {
+            "title": "Python Face Recognition Tutorial",
+            "link": "https://www.mindluster.com/lesson/569-video",
+            "duration": "00:31:18"
+        },
+        {
+            "title": "Python Django Crash Course",
+            "link": "https://www.mindluster.com/lesson/570-video",
+            "duration": "01:11:51"
+        },
+        {
+            "title": "Desktop GUI App With Python Tkinter",
+            "link": "https://www.mindluster.com/lesson/571-video",
+            "duration": "00:56:39"
+        },
+        {
+            "title": "Python Data Visualization With Bokeh",
+            "link": "https://www.mindluster.com/lesson/572-video",
+            "duration": "00:33:54"
+        },
+        {
+            "title": "Build Deploy A Python Web App | Flask Postgres Heroku",
+            "link": "https://www.mindluster.com/lesson/573-video",
+            "duration": "00:53:24"
+        },
+        {
+            "title": "REST API With Flask SQL Alchemy",
+            "link": "https://www.mindluster.com/lesson/574-video",
+            "duration": "00:35:25"
+        },
+        {
+            "title": "Intro To Web Scraping With Python",
+            "link": "https://www.mindluster.com/lesson/575-video",
+            "duration": "00:25:48"
+        },
+        {
+            "title": "Intro To Web Crawlers Scraping With Scrapy",
+            "link": "https://www.mindluster.com/lesson/576-video",
+            "duration": "00:28:56"
+        },
+        {
+            "title": "Pipenv Crash Course",
+            "link": "https://www.mindluster.com/lesson/577-video",
+            "duration": "00:15:40"
+        },
+        {
+            "title": "Python Django Tutorial Build A Todo App",
+            "link": "https://www.mindluster.com/lesson/578-video",
+            "duration": "00:51:02"
+        },
+        {
+            "title": "Object Oriented Programming OOP in Python",
+            "link": "https://www.mindluster.com/lesson/579-video",
+            "duration": "00:46:37"
+        },
+        {
+            "title": "Neural Networks TensorfFlow Crash Course",
+            "link": "https://www.mindluster.com/lesson/580-video",
+            "duration": "02:05:12"
+        }
+    ],
+    "intro_video": "https://www.mindluster.com/lesson/566-video",
+    "thumbnail": "https://img.youtube.com/vi/JJmcL1N2KQs/hqdefault.jpg",
+    "thumbnail_id": 24902
+}

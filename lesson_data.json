@@ -1,0 +1,92 @@
+[
+    {
+        "title": "Python Crash Course For Beginners",
+        "video_url": "https://www.youtube.com/embed/JJmcL1N2KQs",
+        "video_length": "01:35:47",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Python MySQL Crash Course",
+        "video_url": "https://www.youtube.com/embed/BHwgnGEhYG8",
+        "video_length": "00:24:39",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Build A Python Speech Assistant App",
+        "video_url": "https://www.youtube.com/embed/x8xjj6cR9Nc",
+        "video_length": "00:26:47",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Python Face Recognition Tutorial",
+        "video_url": "https://www.youtube.com/embed/QSTnwsZj2yc",
+        "video_length": "00:31:18",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Python Django Crash Course",
+        "video_url": "https://www.youtube.com/embed/e1IyzVyrLSU",
+        "video_length": "01:11:51",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Desktop GUI App With Python Tkinter",
+        "video_url": "https://www.youtube.com/embed/ELkaEpN29PU",
+        "video_length": "00:56:39",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Python Data Visualization With Bokeh",
+        "video_url": "https://www.youtube.com/embed/2TR_6VaVSOs",
+        "video_length": "00:33:54",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Build Deploy A Python Web App | Flask Postgres Heroku",
+        "video_url": "https://www.youtube.com/embed/w25ea_I89iM",
+        "video_length": "00:53:24",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "REST API With Flask SQL Alchemy",
+        "video_url": "https://www.youtube.com/embed/PTZiDnuC86g",
+        "video_length": "00:35:25",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Intro To Web Scraping With Python",
+        "video_url": "https://www.youtube.com/embed/4UcqECQe5Kc",
+        "video_length": "00:25:48",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Intro To Web Crawlers Scraping With Scrapy",
+        "video_url": "https://www.youtube.com/embed/ALizgnSFTwQ",
+        "video_length": "00:28:56",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Pipenv Crash Course",
+        "video_url": "https://www.youtube.com/embed/6Qmnh5C4Pmo",
+        "video_length": "00:15:40",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Python Django Tutorial Build A Todo App",
+        "video_url": "https://www.youtube.com/embed/2yXfUPwlZTw",
+        "video_length": "00:51:02",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Object Oriented Programming OOP in Python",
+        "video_url": "https://www.youtube.com/embed/MikphENIrOo",
+        "video_length": "00:46:37",
+        "extensions": "No Extensions Found"
+    },
+    {
+        "title": "Neural Networks TensorfFlow Crash Course",
+        "video_url": "https://www.youtube.com/embed/tZt6gRlRcgk",
+        "video_length": "02:05:12",
+        "extensions": "No Extensions Found"
+    }
+]
