@@ -257,16 +257,68 @@ function wescraper_add_course_page() {
 
                 <p>Create the course:</p>
                 
-                <form method="post">
-                    <input type="submit" name="add_course" value="Add Course" class="button button-primary button-hero" style="background: #46b450; border-color: #46b450; display: block; width: 100%; text-align: center; margin-bottom: 15px;" />
-                    <p style="color: #777; font-style: italic;">This will use our ultra-simplified approach that successfully creates courses with the API.</p>
-                </form>
+                <form id="wescraper-add-course-form">
+    <input type="submit" name="add_course" value="Add Course" class="button button-primary button-hero" style="background: #46b450; border-color: #46b450; display: block; width: 100%; text-align: center; margin-bottom: 15px;" />
+    <p style="color: #777; font-style: italic;">This will use our ultra-simplified approach that successfully creates courses with the API.</p>
+</form>
+<div style="margin-top:10px;">
+    <progress id="wescraper-add-course-progress-bar" value="0" max="100" style="width:300px;"></progress> <span id="wescraper-add-course-progress-text"></span>
+</div>
+<div id="wescraper-add-course-result" style="margin-top:20px;"></div>
+<script>
+jQuery(document).ready(function($){
+    var pollingInterval = null;
+    var btn = $("#wescraper-add-course-form").find("input[name='add_course']");
+    var progressBar = $('#wescraper-add-course-progress-bar');
+    var progressText = $('#wescraper-add-course-progress-text');
+    var resultDiv = $('#wescraper-add-course-result');
+
+    function pollAddCourseStatus() {
+        $.post(ajaxurl, { action: 'wescraper_check_add_course_status' }, function(response) {
+            if (response.status === 'running') {
+                var percent = response.progress || 0;
+                progressBar.val(percent);
+                progressText.text('Adding: ' + percent + '% ' + (response.message ? ('- ' + response.message) : ''));
+            } else if (response.status === 'done') {
+                clearInterval(pollingInterval);
+                progressBar.val(100);
+                progressText.text('✅ Course added!');
+                btn.prop('disabled', false).val('Add Course');
+                resultDiv.html('<div class="notice notice-success" style="padding:10px;">' + (response.message || 'Course added successfully!') + '</div>');
+            } else if (response.status === 'error') {
+                clearInterval(pollingInterval);
+                progressBar.val(0);
+                progressText.text('❌ Error!');
+                btn.prop('disabled', false).val('Add Course');
+                resultDiv.html('<div class="notice notice-error" style="padding:10px;">' + (response.message || 'Error adding course!') + '</div>');
+            }
+        });
+    }
+
+    $("#wescraper-add-course-form").on("submit", function(e){
+        e.preventDefault();
+        btn.prop("disabled",true).val("Processing...");
+        progressBar.val(0);
+        progressText.text('Starting...');
+        resultDiv.html('');
+        $.post(ajaxurl, { action: "wescraper_start_add_course" }, function(response){
+            if(response.status === 'started'){
+                pollingInterval = setInterval(pollAddCourseStatus, 10000);
+            } else {
+                btn.prop('disabled', false).val('Add Course');
+                resultDiv.html('<div class="notice notice-error" style="padding:10px;">Failed to start async add course!</div>');
+            }
+        });
+    });
+});
+</script>
+
                 
                 <h3 style="margin-top: 20px;">Thumbnail Management</h3>
                 <p>If the thumbnail doesn't appear after course creation, use this button:</p>
                 <form method="post">
                     <input type="submit" name="update_thumbnail" value="Update Thumbnail for Last Course" class="button button-secondary" style="width: 100%; text-align: center; margin-bottom: 15px;" />
-        </form>
+                </form>
             </div>
             
             <div style="flex: 2; background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
@@ -282,12 +334,7 @@ function wescraper_add_course_page() {
         </div>
     </div>
     <?php
-    if (isset($_POST['add_course'])) {
-        echo '<div style="margin-top: 20px; background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
-        echo '<h2>Course Creation Results</h2>';
-        wescraper_process_add_course();
-        echo '</div>';
-    } else if (isset($_POST['upload_thumbnail'])) {
+    if (isset($_POST['upload_thumbnail'])) {
         echo '<div style="margin-top: 20px; background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
         echo '<h2>Thumbnail Upload Results</h2>';
         
@@ -334,9 +381,78 @@ function wescraper_add_course_page() {
     }
 }
 
-function wescraper_process_add_course() {
+// === ASYNC ADD COURSE HANDLERS ===
+// Start async add course
+add_action('wp_ajax_wescraper_start_add_course', function() {
+    update_option('wescraper_add_course_status', [
+        'status' => 'running',
+        'progress' => 0,
+        'message' => 'Starting',
+        'started_at' => time(),
+    ]);
+    // Schedule WP Cron event for background add
+    if (!wp_next_scheduled('wescraper_do_background_add_course')) {
+        wp_schedule_single_event(time() + 2, 'wescraper_do_background_add_course');
+    }
+    wp_send_json(['status' => 'started']);
+});
+
+// Poll status
+add_action('wp_ajax_wescraper_check_add_course_status', function() {
+    $status = get_option('wescraper_add_course_status', ['status'=>'idle','progress'=>0]);
+    wp_send_json($status);
+});
+
+// WP Cron handler for background add course
+add_action('wescraper_do_background_add_course', function() {
+    $update_status = function($progress, $msg, $final = false, $err = false) {
+        update_option('wescraper_add_course_status', [
+            'status' => $err ? 'error' : ($final ? 'done' : 'running'),
+            'progress' => $progress,
+            'message' => $msg,
+            'updated_at' => time(),
+        ]);
+    };
+    try {
+        $update_status(5, 'Validating data...');
+        // Simulate validation (could check result.json, etc.)
+        $resultJsonPath = plugin_dir_path(__FILE__) . 'result.json';
+        if (!file_exists($resultJsonPath)) {
+            $update_status(0, 'No result.json found!', true, true);
+            return;
+        }
+        $update_status(10, 'Preparing course data...');
+        // Actually add the course (reuse existing logic)
+        ob_start();
+        $ok = wescraper_process_add_course(function($p,$m) use ($update_status) {
+            $update_status($p, $m);
+        });
+        $output = trim(ob_get_clean());
+        if ($ok === true) {
+            $update_status(100, 'Course added successfully!', true, false);
+        } else {
+            // Only show output if it looks like an error
+            $error_message = ($output && stripos($output, 'error') !== false) ? $output : 'Unknown error';
+            $update_status(0, 'Error adding course: ' . $error_message, true, true);
+        }
+    } catch (Exception $e) {
+        $update_status(0, 'Exception: ' . $e->getMessage(), true, true);
+    }
+});
+// (Legacy sync handler remains for fallback/manual use)
+add_action('wp_ajax_wescraper_add_course','wescraper_handle_add_course_ajax');
+function wescraper_handle_add_course_ajax(){
+    echo '<div style="margin-top: 20px; background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+    echo '<h2>Course Creation Results</h2>';
+    wescraper_process_add_course();
+    echo '</div>';
+    wp_die();
+}
+
+function wescraper_process_add_course($progress_callback = null) {
     try {
         wescraper_log("Starting wescraper_process_add_course");
+        $return_success = false;
 
         // Get API credentials
         $api_key = get_option('wescraper_api_key', '');
@@ -529,7 +645,7 @@ function wescraper_process_add_course() {
         // For WordPress installations where user ID 1 doesn't work, try without specifying post_author
         
         wescraper_log("Ultra simplified course data prepared: " . print_r($course_data, true));
-        echo "Creating course from JSON data...<br>";
+        // Removed progress echo to avoid false error reporting in async handler
         
         // Make the API request
         $response = $api_client->makeRequest(
@@ -782,6 +898,12 @@ function wescraper_process_add_course() {
         }
         
         foreach ($json_data['lessons'] as $index => $lesson) {
+            // --- Progress update for each lesson ---
+            if (is_callable($progress_callback)) {
+                $progress_percent = 10 + intval(($index + 1) * (90 / max(1, count($json_data['lessons']))));
+                $lesson_msg = 'Adding lesson '.($index+1).' of '.count($json_data['lessons']).': '.(isset($lesson['title']) ? $lesson['title'] : '');
+                $progress_callback($progress_percent, $lesson_msg);
+            }
             // Extract lesson data
             $lesson_title = isset($lesson['title']) ? trim($lesson['title']) : "Lesson " . ($index + 1);
             
@@ -916,15 +1038,20 @@ function wescraper_process_add_course() {
         }
         
         wescraper_log("Created {$lessons_created} lessons out of " . count($json_data['lessons']));
+// Final progress update at 100% (if not already done)
+if (is_callable($progress_callback)) {
+    $progress_callback(100, 'All lessons added!', true, false);
+}
         
         wescraper_log("✅ Course creation process completed successfully!");
+        $return_success = true;
         echo "<div style='margin-top:20px; padding:15px; background:#f0f8ff; border:1px solid #add8e6; border-radius:4px;'>";
         echo "<h3 style='margin-top:0;'>🎓 Course Creation Complete!</h3>";
         echo "<p>Course <strong>" . htmlspecialchars($course_title) . "</strong> has been successfully created with <strong>" . $lessons_created . "</strong> lessons.</p>";
         echo "<p><a href='edit.php?post_type=courses' class='button button-primary' style='margin-right:10px;' target='_blank'>View All Courses</a>";
         echo "<a href='post.php?post=" . $course_id . "&action=edit' class='button' target='_blank'>Edit This Course</a></p>";
         echo "</div>";
-
+        return $return_success;
     } catch (Exception $e) {
         echo "<div style='color:white; padding:15px; background:#d63638; border:1px solid #d63638; margin:15px 0; border-radius:4px;'>";
         echo "<h3 style='margin-top:0; color:white;'>❌ Error Occurred</h3>";
@@ -932,6 +1059,7 @@ function wescraper_process_add_course() {
         echo "<p style='margin-top:10px; font-size:0.9em;'>Check the WeScraper log file for more details.</p>";
         echo "</div>";
         wescraper_log("❌ Exception: " . $e->getMessage());
+        return false;
     }
 }
 
@@ -992,7 +1120,7 @@ function wescraper_test_add_course() {
             $test_course_data
         );
         
-        wescraper_log("API test response received: " . print_r($response, true));
+        wescraper_log("API response received: " . print_r($response, true));
 
         if (!isset($response['data'])) {
             // Handle error

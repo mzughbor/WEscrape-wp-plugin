@@ -8,6 +8,20 @@ require_once plugin_dir_path(__FILE__) . 'functions.php';
 require_once plugin_dir_path(__FILE__) . 'new_site_scraper.php';
 require_once plugin_dir_path(dirname(__FILE__)) . '/add-course-page.php';
 
+/**
+ * Normalize a course URL for consistent duplicate checking
+ */
+function wescraper_normalize_url($url) {
+    $url = trim(strtolower($url));
+    // Remove fragment
+    $url = preg_replace('/#.*$/', '', $url);
+    // Remove trailing slash (unless it's just the root)
+    $url = preg_replace('#(?<!:)/+$#', '', $url);
+    // Optionally, remove query string (uncomment if needed)
+    // $url = preg_replace('/\?.*$/', '', $url);
+    return $url;
+}
+
 function wescraper_scrape_course() {
     $courseUrl = get_option('wescraper_course_url', "");
     $coursesFile = plugin_dir_path(dirname(__FILE__)) . 'scraped_courses.txt';
@@ -20,8 +34,10 @@ function wescraper_scrape_course() {
     // Check if course URL already exists
     if (file_exists($coursesFile)) {
         $courses = file($coursesFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $courses = array_map('strtolower', array_map('trim', $courses));
-        if (in_array(strtolower(trim($courseUrl)), $courses)) {
+        $courses = array_map('wescraper_normalize_url', $courses);
+        $normalizedUrl = wescraper_normalize_url($courseUrl);
+        if (in_array($normalizedUrl, $courses)) {
+            wescraper_log("Duplicate course URL detected: $normalizedUrl");
             return "duplicate"; // Return status instead of echoing
         }
     }
@@ -159,7 +175,9 @@ function wescraper_scrape_course() {
             if (!file_exists($coursesFile)) {
                 touch($coursesFile);
             }
-            file_put_contents($coursesFile, $courseUrl . "\n", FILE_APPEND);
+            $normalizedUrl = wescraper_normalize_url($courseUrl);
+            file_put_contents($coursesFile, $normalizedUrl . "\n", FILE_APPEND);
+            wescraper_log("Added new course URL to scraped_courses.txt: $normalizedUrl");
             
             // For Arabic sites, also create arabic_result.json immediately
             if ($sourceSite === 'm3aarf') {
@@ -239,54 +257,10 @@ function wescraper_scrape_page() {
     $currentUrl = get_option('wescraper_course_url', "");
     $status = null;
 
-    // Only process form if it was actually submitted
-    if (isset($_POST['wescraper_scrape_now']) && isset($_POST['wescraper_course_url'])) {
-        // Update the URL option
-        $newUrl = sanitize_url($_POST['wescraper_course_url']);
-        update_option('wescraper_course_url', $newUrl);
-        
-        // Call scrape function and get status
-        $status = wescraper_scrape_course();
-        
-        // Show appropriate message based on status
-        if ($status === "duplicate") {
-            echo '<div class="notice notice-warning is-dismissible"><p>Course URL already scraped!</p></div>';
-        } elseif ($status === "success") {
-            echo '<div class="notice notice-success is-dismissible"><p>✅ Course data saved to result.json!</p><p>All previous course data was cleaned to prevent mixing of lessons.</p></div>';
-        } elseif ($status === "failed_save") {
-            echo "<p>❌ Failed to save course data to result.json.</p>";
-        } elseif ($status === "failed_scrape") {
-            echo "<p>❌ Failed to fetch course data.</p>";
-        }
-    }
-
-    $resultJsonContent = '';
-    if (file_exists(plugin_dir_path(__FILE__) . '../result.json')) {
-        $resultJsonContent = file_get_contents(plugin_dir_path(__FILE__) . '../result.json');
-    }
-
-    $lessonJsonContent = '';
-    if (file_exists(plugin_dir_path(__FILE__) . '../lesson_data.json')) {
-        $lessonJsonContent = file_get_contents(plugin_dir_path(__FILE__) . '../lesson_data.json');
-    }
-    
-    // Arabic specific JSON files
-    $arabicResultJsonContent = '';
-    if (file_exists(plugin_dir_path(__FILE__) . '../arabic_result.json')) {
-        $arabicResultJsonContent = file_get_contents(plugin_dir_path(__FILE__) . '../arabic_result.json');
-    }
-    
-    $arabicLessonJsonContent = '';
-    if (file_exists(plugin_dir_path(__FILE__) . '../arabic_lesson_data.json')) {
-        $arabicLessonJsonContent = file_get_contents(plugin_dir_path(__FILE__) . '../arabic_lesson_data.json');
-    }
-
-    $textareaDirection = is_rtl() ? 'ltr' : 'rtl';
-
     ?>
     <div class="wrap">
         <h2>WeScraper Course Scraper</h2>
-        <form method="post">
+        <form id="wescraper-scrape-course-form" method="post">
             <label for="wescraper_course_url">Course URL:</label><br>
             <input type="text" name="wescraper_course_url" id="wescraper_course_url" value="<?php echo esc_attr($currentUrl); ?>" style="width: 500px;"><br><br>
             <p class="description">Supported sites: Mindluster, M3AARF, New Site</p>
@@ -294,82 +268,239 @@ function wescraper_scrape_page() {
             <input type="hidden" name="wescraper_scrape_now" value="1">
             <input type="submit" class="button button-primary" value="Scrape Course">
         </form>
-
+        <div id="wescraper-scrape-course-result" style="margin-top:20px;"></div>
+        <script>
+function clearAllJsonTextareas() {
+    jQuery('#wescraper-result-json').val('');
+    jQuery('#wescraper-lesson-json').val('');
+    jQuery('#wescraper-arabic-result-json').val('');
+    jQuery('#wescraper-arabic-lesson-json').val('');
+    jQuery('#wescraper-arabic-thumbnail-json').val('');
+    jQuery('#wescraper-arabic-thumbnail-id-json').val('');
+}
+jQuery(document).ready(function($){
+        $("#wescraper-scrape-course-form").on("submit", function(e){
+        e.preventDefault();
+        clearAllJsonTextareas();
+                var btn = $(this).find("input[type='submit']");
+                btn.prop("disabled",true).val("Processing...");
+                var url = $("#wescraper_course_url").val();
+                $.post(ajaxurl, { action: "wescraper_scrape_course", wescraper_course_url: url, wescraper_scrape_now: 1 }, function(response){
+                    $("#wescraper-scrape-course-result").html(response);
+                    btn.prop("disabled",false).val("Scrape Course");
+                    
+                    // After scrape completes, fetch and update all JSON textareas
+                    $.post(ajaxurl, { action: 'wescraper_get_result_json' }, function(jsonResponse) {
+                        if (jsonResponse.success && jsonResponse.data) {
+                            // Update result.json textarea
+                            if (jsonResponse.data.result_json) {
+                                $('#wescraper-result-json').val(jsonResponse.data.result_json);
+                            }
+                            
+                            // Update lesson_data.json textarea
+                            if (jsonResponse.data.lesson_json) {
+                                $('#wescraper-lesson-json').val(jsonResponse.data.lesson_json);
+                            }
+                            
+                            // Update arabic_result.json textarea
+                            if (jsonResponse.data.arabic_result_json) {
+                                $('#wescraper-arabic-result-json').val(jsonResponse.data.arabic_result_json);
+                            }
+                            
+                            // Update arabic_lesson_data.json textarea
+                            if (jsonResponse.data.arabic_lesson_json) {
+                                $('#wescraper-arabic-lesson-json').val(jsonResponse.data.arabic_lesson_json);
+                            }
+                            
+                            console.log('Updated all JSON data in textareas after scrape.');
+                        } else {
+                            console.error('Failed to load JSON after scrape:', jsonResponse);
+                        }
+                    }).fail(function(jqXHR, textStatus, errorThrown) {
+                        console.error('AJAX error when updating textareas:', textStatus, errorThrown);
+                    });
+                });
+            });
+        });
+        </script>
         <br>
         <h3>Latest Scraped Data (result.json)</h3>
-        <textarea rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: <?php echo esc_attr($textareaDirection); ?>;">
-            <?php echo esc_textarea($resultJsonContent); ?>
+        <textarea id="wescraper-result-json" rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: <?php echo is_rtl() ? 'ltr' : 'rtl'; ?>;">
+        <?php 
+        $resultJsonContent = '';
+        if (file_exists(plugin_dir_path(__FILE__) . '../result.json')) {
+            $resultJsonContent = file_get_contents(plugin_dir_path(__FILE__) . '../result.json');
+        }
+        echo esc_textarea($resultJsonContent); ?>
         </textarea>
+        <div id="wescraper-course-notice"></div>
         <br>
-        <form method="post">
-            <input type="hidden" name="wescraper_scrape_lessons" value="1">
-            <input type="submit" class="button button-secondary" value="Scrape Lessons">
-            <?php 
-            // First check for Arabic content in result.json
-            $has_arabic_content = false;
-            $result_json_path = plugin_dir_path(__FILE__) . '../result.json';
-            
-            if (file_exists($result_json_path)) {
-                $temp_data = json_decode(file_get_contents($result_json_path), true);
-                if (is_array($temp_data) && isset($temp_data['course_name'])) {
-                    // Check for Arabic characters in the course name
-                    if (preg_match('/[\x{0600}-\x{06FF}]/u', $temp_data['course_name'])) {
-                        $has_arabic_content = true;
-                        echo '<span style="color:#0073aa; margin-left:10px;"><strong>✓ Arabic content detected!</strong> Special Arabic handling automatically enabled.</span>';
+        <div id="wescraper-scrape-lessons-ui">
+            <button id="wescraper-scrape-lessons-btn" class="button button-secondary">Scrape Lessons</button><br>
+            <progress id="wescraper-progress-bar" value="0" max="100" style="width:300px;"></progress> <span id="wescraper-progress-text"></span>
+        </div>
+        <div id="wescraper-scrape-lessons-result" style="margin-top:20px;"></div>
+        <script>
+        jQuery(document).ready(function($) {
+            var pollingInterval = null;
+            var scrapeBtn = $('#wescraper-scrape-lessons-btn');
+            var progressBar = $('#wescraper-progress-bar');
+            var progressText = $('#wescraper-progress-text');
+            var resultTextarea = $('#wescraper-result-json');
+            var courseNotice = $('#wescraper-course-notice');
+
+            function updateCourseInfo() {
+                // First update with the course info
+                $.post(ajaxurl, { action: 'wescraper_get_course_info' }, function(response) {
+                    if (response.result_json !== undefined) {
+                        resultTextarea.val(response.result_json);
                     }
-                }
-                
-                // If no Arabic content detected automatically, still offer checkbox for manual override
-                if (!$has_arabic_content) {
-                    echo '<label style="margin-left: 10px;"><input type="checkbox" name="wescraper_arabic_processing" value="1" style="margin-right: 5px;"> Force Arabic processing</label>';
-                    echo '<p class="description" style="margin-top: 5px; margin-left: 10px;"><small>✓ Use this only if the content has Arabic but wasn\'t detected automatically</small></p>';
-                } else {
-                    echo '<input type="hidden" name="wescraper_arabic_processing" value="1">';
+                    if (response.notice_html !== undefined) {
+                        courseNotice.html(response.notice_html);
+                    }
+                    
+                    // Then fetch and update all JSON textareas
+                    updateAllJsonTextareas();
+                });
+            }
+
+            // Function to update all JSON textareas
+            function updateAllJsonTextareas() {
+                $.post(ajaxurl, { action: 'wescraper_get_result_json' }, function(jsonResponse) {
+                    if (jsonResponse.success && jsonResponse.data) {
+                        // Update result.json textarea
+                        if (jsonResponse.data.result_json) {
+                            $('#wescraper-result-json').val(jsonResponse.data.result_json);
+                        }
+                        
+                        // Update lesson_data.json textarea
+                        if (jsonResponse.data.lesson_json) {
+                            $('#wescraper-lesson-json').val(jsonResponse.data.lesson_json);
+                        }
+                        
+                        // Update arabic_result.json textarea
+                        if (jsonResponse.data.arabic_result_json) {
+                            $('#wescraper-arabic-result-json').val(jsonResponse.data.arabic_result_json);
+                        }
+                        
+                        // Update arabic_lesson_data.json textarea
+                        if (jsonResponse.data.arabic_lesson_json) {
+                            $('#wescraper-arabic-lesson-json').val(jsonResponse.data.arabic_lesson_json);
+                        }
+                        
+                        // Update arabic_thumbnail.json textarea
+                        if (jsonResponse.data.arabic_thumbnail_json) {
+                            $('#wescraper-arabic-thumbnail-json').val(jsonResponse.data.arabic_thumbnail_json);
+                        }
+                        // Update arabic_thumbnail_id.json textarea
+                        if (jsonResponse.data.arabic_thumbnail_id_json) {
+                            $('#wescraper-arabic-thumbnail-id-json').val(jsonResponse.data.arabic_thumbnail_id_json);
+                        }
+                        console.log('Updated all JSON data in textareas.');
+                    } else {
+                        console.error('Failed to load JSON:', jsonResponse);
+                    }
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error('AJAX error when updating textareas:', textStatus, errorThrown);
+                });
+            }
+            
+            function pollScrapeStatus() {
+                $.post(ajaxurl, { action: 'wescraper_check_scrape_status' }, function(response) {
+                    if (response.status === 'running') {
+                        var percent = response.progress || 0;
+                        progressBar.val(percent);
+                        progressText.text('Scraping: ' + percent + '%');
+                    } else if (response.status === 'done') {
+                        clearInterval(pollingInterval);
+                        progressBar.val(100);
+                        progressText.text('✅ Scraping complete!');
+                        scrapeBtn.prop('disabled', false);
+                        // Fetch and display the updated JSON files
+                        updateAllJsonTextareas();
+                        updateCourseInfo();
+                    } else if (response.status === 'error') {
+                        clearInterval(pollingInterval);
+                        progressText.text('❌ Error: ' + response.message);
+                        scrapeBtn.prop('disabled', false);
+                        updateCourseInfo();
+                    }
+                });
+            }
+
+            scrapeBtn.on('click', function(e) {
+        e.preventDefault();
+        clearAllJsonTextareas();
+                scrapeBtn.prop('disabled', true);
+                progressBar.val(0);
+                progressText.text('Starting scrape...');
+                $.post(ajaxurl, { action: 'wescraper_start_scrape' }, function(response) {
+                    if (response.status === 'started') {
+                        pollingInterval = setInterval(pollScrapeStatus, 3000);
+                    } else {
+                        progressText.text('❌ Failed to start scrape: ' + response.message);
+                        scrapeBtn.prop('disabled', false);
+                    }
+                });
+            });
+        });
+        </script>
+        <?php 
+        // First check for Arabic content in result.json
+        $has_arabic_content = false;
+        $result_json_path = plugin_dir_path(__FILE__) . '../result.json';
+        
+        if (file_exists($result_json_path)) {
+            $temp_data = json_decode(file_get_contents($result_json_path), true);
+            if (is_array($temp_data) && isset($temp_data['course_name'])) {
+                // Check for Arabic characters in the course name
+                if (preg_match('/[\x{0600}-\x{06FF}]/u', $temp_data['course_name'])) {
+                    $has_arabic_content = true;
+                    echo '<span style="color:#0073aa; margin-left:10px;"><strong>✓ Arabic content detected!</strong> Special Arabic handling automatically enabled.</span>';
                 }
             }
-            ?>
-        </form>
-        <?php
-        if (isset($_POST['wescraper_scrape_lessons'])) {
-            echo '<div class="notice notice-info is-dismissible"><p><strong>Starting lesson scraping process</strong></p><p>Old lesson data will be cleaned to prevent mixing of content between courses.</p></div>';
-            $arabicProcessing = isset($_POST['wescraper_arabic_processing']) ? true : $has_arabic_content;
             
-            // Extract course data to use description as fallback for lesson content
-            $courseData = wescraper_extract_data($html, $sourceSite, $cookies);
-            if (!$courseData) {
-                wescraper_log("Course extraction failed, will still attempt to scrape lessons");
-                $courseData = [];
+            // If no Arabic content detected automatically, still offer checkbox for manual override
+            if (!$has_arabic_content) {
+                echo '<label style="margin-left: 10px;"><input type="checkbox" name="wescraper_arabic_processing" value="1" style="margin-right: 5px;"> Force Arabic processing</label>';
+                echo '<p class="description" style="margin-top: 5px; margin-left: 10px;"><small>✓ Use this only if the content has Arabic but wasn\'t detected automatically</small></p>';
             } else {
-                wescraper_log("Course data extracted successfully for fallback use");
+                echo '<input type="hidden" name="wescraper_arabic_processing" value="1">';
             }
-            
-            // Pass course data to lesson scraper
-            $lessonData = [
-                'url' => $courseUrl,
-                'cookies' => $cookies,
-                'is_arabic' => $arabicProcessing,
-                'course_data' => $courseData
-            ];
-            wescraper_scrape_lessons($lessonData);
         }
         ?>
         <br>
         <h3>Latest Scraped Lessons (lesson_data.json)</h3>
-        <textarea rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: <?php echo esc_attr($textareaDirection); ?>;">
-            <?php echo esc_textarea($lessonJsonContent); ?>
+        <textarea id="wescraper-lesson-json" rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: <?php echo is_rtl() ? 'ltr' : 'rtl'; ?>;">
+            <?php 
+            $lessonJsonContent = '';
+            if (file_exists(plugin_dir_path(__FILE__) . '../lesson_data.json')) {
+                $lessonJsonContent = file_get_contents(plugin_dir_path(__FILE__) . '../lesson_data.json');
+            }
+            echo esc_textarea($lessonJsonContent); ?>
         </textarea>
         
         <?php if (file_exists(plugin_dir_path(__FILE__) . '../arabic_result.json')): ?>
             <br>
             <h3>Arabic Course Data (arabic_result.json)</h3>
-            <textarea rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: rtl;">
-                <?php echo esc_textarea($arabicResultJsonContent); ?>
+            <textarea id="wescraper-arabic-result-json" rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: rtl;">
+                <?php 
+                $arabicResultJsonContent = '';
+                if (file_exists(plugin_dir_path(__FILE__) . '../arabic_result.json')) {
+                    $arabicResultJsonContent = file_get_contents(plugin_dir_path(__FILE__) . '../arabic_result.json');
+                }
+                echo esc_textarea($arabicResultJsonContent); ?>
             </textarea>
             
             <br>
             <h3>Arabic Lesson Data (arabic_lesson_data.json)</h3>
-            <textarea rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: rtl;">
-                <?php echo esc_textarea($arabicLessonJsonContent); ?>
+            <textarea id="wescraper-arabic-lesson-json" rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: rtl;">
+                <?php 
+                $arabicLessonJsonContent = '';
+                if (file_exists(plugin_dir_path(__FILE__) . '../arabic_lesson_data.json')) {
+                    $arabicLessonJsonContent = file_get_contents(plugin_dir_path(__FILE__) . '../arabic_lesson_data.json');
+                }
+                echo esc_textarea($arabicLessonJsonContent); ?>
             </textarea>
             
             <br>
@@ -377,6 +508,12 @@ function wescraper_scrape_page() {
                 <p><strong>Arabic Content Detected</strong></p>
                 <p>Your course contains Arabic content. The system will automatically use specialized Arabic processing when adding the course.</p>
             </div>
+            <br>
+            <h3>Arabic Thumbnail Data (arabic_thumbnail.json)</h3>
+            <textarea id="wescraper-arabic-thumbnail-json" rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: rtl;"></textarea>
+            <br>
+            <h3>Arabic Thumbnail ID Data (arabic_thumbnail_id.json)</h3>
+            <textarea id="wescraper-arabic-thumbnail-id-json" rows="20" cols="80" style="width: 90%; height: 400px; overflow: auto; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; font-family: monospace; direction: rtl;"></textarea>
         <?php endif; ?>
         <br>
         
@@ -418,4 +555,98 @@ function wescraper_scrape_page() {
     </div>
     <?php
 }
+
+// Register AJAX handler for scrape course
+add_action('wp_ajax_wescraper_scrape_course','wescraper_handle_scrape_course_ajax');
+
+// AJAX handler to return all JSON file contents
+add_action('wp_ajax_wescraper_get_result_json', function() {
+    $plugin_dir = plugin_dir_path(dirname(__FILE__));
+    $response = [];
+    
+    // Get result.json
+    $result_json_file = $plugin_dir . 'result.json';
+    if (file_exists($result_json_file)) {
+        $response['result_json'] = file_get_contents($result_json_file);
+    }
+    
+    // Get lesson_data.json
+    $lesson_json_file = $plugin_dir . 'lesson_data.json';
+    if (file_exists($lesson_json_file)) {
+        $response['lesson_json'] = file_get_contents($lesson_json_file);
+    }
+    
+    // Get arabic_result.json
+    $arabic_result_json_file = $plugin_dir . 'arabic_result.json';
+    if (file_exists($arabic_result_json_file)) {
+        $response['arabic_result_json'] = file_get_contents($arabic_result_json_file);
+    }
+    
+    // Get arabic_lesson_data.json
+    $arabic_lesson_json_file = $plugin_dir . 'arabic_lesson_data.json';
+    if (file_exists($arabic_lesson_json_file)) {
+        $response['arabic_lesson_json'] = file_get_contents($arabic_lesson_json_file);
+    }
+
+    // Get arabic_thumbnail.json
+    $arabic_thumbnail_json_file = $plugin_dir . 'arabic_thumbnail.json';
+    if (file_exists($arabic_thumbnail_json_file)) {
+        $response['arabic_thumbnail_json'] = file_get_contents($arabic_thumbnail_json_file);
+    }
+
+    // Get arabic_thumbnail_id.json
+    $arabic_thumbnail_id_json_file = $plugin_dir . 'arabic_thumbnail_id.json';
+    if (file_exists($arabic_thumbnail_id_json_file)) {
+        $response['arabic_thumbnail_id_json'] = file_get_contents($arabic_thumbnail_id_json_file);
+    }
+    
+    if (!empty($response)) {
+        wp_send_json_success($response);
+    } else {
+        wp_send_json_error(['message' => 'No JSON files found']);
+    }
+});
+function wescraper_handle_scrape_course_ajax(){
+    $url = isset($_POST['wescraper_course_url']) ? sanitize_text_field($_POST['wescraper_course_url']) : '';
+    update_option('wescraper_course_url', $url);
+    $status = wescraper_scrape_course();
+    if ($status === "duplicate") {
+        echo '<div class="notice notice-warning is-dismissible"><p>Course URL already scraped!</p></div>';
+    } elseif ($status === "success") {
+        echo '<div class="notice notice-success is-dismissible"><p>✅ Course data saved to result.json!</p><p>All previous course data was cleaned to prevent mixing of lessons.</p></div>';
+    } elseif ($status === "failed_save") {
+        echo "<p>❌ Failed to save course data to result.json.</p>";
+    } elseif ($status === "failed_scrape") {
+        echo "<p>❌ Failed to fetch course data.</p>";
+    }
+    wp_die();
+}
+
+// Enqueue admin JS for async scraping UI
+add_action('admin_enqueue_scripts', function() {
+    wp_enqueue_script('wescraper-admin-js', plugin_dir_url(__FILE__) . '../wescraper-admin.js', ['jquery'], null, true);
+});
+
+// AJAX handler to start scraping (async)
+add_action('wp_ajax_wescraper_start_scrape', function() {
+    update_option('wescraper_scrape_status', [
+        'status' => 'running',
+        'progress' => 0,
+        'message' => 'Started',
+        'started_at' => time(),
+    ]);
+    // Schedule WP Cron event for background scraping
+    if (!wp_next_scheduled('wescraper_do_background_scrape')) {
+        wp_schedule_single_event(time() + 2, 'wescraper_do_background_scrape');
+    }
+    wp_send_json(['status' => 'started']);
+});
+
+// AJAX handler to check scrape status
+add_action('wp_ajax_wescraper_check_scrape_status', function() {
+    $status = get_option('wescraper_scrape_status', ['status'=>'idle','progress'=>0]);
+    wp_send_json($status);
+});
+
+
 ?>

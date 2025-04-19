@@ -783,4 +783,42 @@ function wescraper_extract_mindluster_iframe_content($url, $cookies = '') {
     wescraper_log("Content extracted successfully from mindluster iframe, length: " . mb_strlen($content));
     return nl2br($content);
 }
+// WP Cron handler for background scraping
+add_action('wescraper_do_background_scrape', function() {
+    $url = get_option('wescraper_course_url','');
+    $cookiesFile = plugin_dir_path(__FILE__) . '../cookies.json';
+    $cookies = function_exists('wescraper_get_cookies_from_json') ? wescraper_get_cookies_from_json($cookiesFile) : '';
+    $sourceSite = wescraper_detect_source_site($url);
+    $html = wescraper_fetch_url($url, $cookies);
+    $isArabic = false; // For now, can be extended
+    $courseData = wescraper_extract_data($html, $sourceSite, $cookies) ?: [];
+    $lessonData = ['url'=>$url, 'cookies'=>$cookies, 'is_arabic'=>$isArabic, 'course_data'=>$courseData];
+    
+    // Progress callback for polling
+    $progressCallback = function($percent, $msg = '') {
+        update_option('wescraper_scrape_status', [
+            'status' => 'running',
+            'progress' => $percent,
+            'message' => $msg,
+            'updated_at' => time(),
+        ]);
+    };
+    try {
+        wescraper_scrape_lessons($lessonData, $progressCallback);
+        update_option('wescraper_scrape_status', [
+            'status' => 'done',
+            'progress' => 100,
+            'message' => 'Done',
+            'finished_at' => time(),
+        ]);
+    } catch (Exception $e) {
+        update_option('wescraper_scrape_status', [
+            'status' => 'error',
+            'progress' => 0,
+            'message' => $e->getMessage(),
+            'finished_at' => time(),
+        ]);
+    }
+});
+
 ?>

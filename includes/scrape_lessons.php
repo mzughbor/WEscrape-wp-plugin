@@ -12,7 +12,7 @@ require_once plugin_dir_path(__FILE__) . 'upload_thumbnail.php';
  * @param array|string $args If array, contains url, cookies, is_arabic, and course_data. If string, it's the URL
  * @return array The scraped lesson data
  */
-function wescraper_scrape_lessons($args) {
+function wescraper_scrape_lessons($args, $progress_callback = null) {
     // Process input parameters
     $url = '';
     $cookies = '';
@@ -185,7 +185,18 @@ function wescraper_scrape_lessons($args) {
 
         $allLessonData = [];
 
+        $total = count($data['lessons']);
         foreach ($data['lessons'] as $index => $lesson) {
+            // Progress callback for async UI
+            if (is_callable($progress_callback)) {
+                // Progress: start at 5%, end at 100%, smooth increments
+                $percent = 5 + intval(($index + 1) * (95 / max(1, $total)));
+                $msg = 'Scraping lesson '.($index+1).' of '.$total;
+                if (isset($lesson['title'])) {
+                    $msg .= ': ' . mb_substr($lesson['title'], 0, 40) . (mb_strlen($lesson['title']) > 40 ? '...' : '');
+                }
+                $progress_callback($percent, $msg);
+            }
             // Properly decode Arabic title - improved for m3aarf
             $lessonTitle = $lesson['title'];
             // Only process if not already properly decoded
@@ -476,7 +487,14 @@ function wescraper_scrape_lessons($args) {
         wescraper_upload_thumbnail($siteType);
     } catch (Exception $e) {
         wescraper_log("Exception in wescraper_scrape_lessons: " . $e->getMessage());
+        if (is_callable($progress_callback)) {
+            $progress_callback(0, 'Error: ' . $e->getMessage());
+        }
         echo "❌ An error occurred while processing lessons. Please check the logs for more details.<br>";
+    }
+    // Always call progress callback at the end to ensure polling can finish
+    if (is_callable($progress_callback)) {
+        $progress_callback(100, 'Done');
     }
 }
 

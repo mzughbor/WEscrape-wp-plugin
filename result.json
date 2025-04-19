@@ -1,26 +1,66 @@
 {
-    "course_name": "كورس كمبيوتر - المستوى الأول",
-    "category": "المرحلة الابتدائية",
-    "description": "دورة معتمدة اون لاين مجانية كورس كمبيوتر - المستوى الأول دورس جميع المناهج للصف الثانوية و الاعدادي و الابتدائي اولي اعدادي تانية اعدادي تالته اعدادي اولى ثانوي",
-    "thumbnail": "https://img.youtube.com/vi/8XHxl4qvMYQ/hqdefault.jpg",
+    "course_name": "Best antibiotics for diseases",
+    "category": "Medical",
+    "lesson_count": "11",
+    "description": "Best antibiotics for diseases, in this course we will learn about the most effective antibiotics used to treat a wide range of bacterial infections. You’ll explore the classification of antibiotics, their mechanisms of action, and how to select the appropriate antibiotic based on the type of infection—such as respiratory, urinary, skin, gastrointestinal, and sexually transmitted diseases. We will also cover antibiotic spectrum => Array(broad vs. narrow), routes of administration, and dosing strategies. The course highlights common antibiotics like penicillins, macrolides, tetracyclines, fluoroquinolones, and others, with real-world case applications. Special attention will be given to resistance prevention, side effects, and safe usage across different age groups and conditions. By the end of the course, you’ll have a solid understanding of how antibiotics function and how to choose the right one for each disease. This course is ideal for students, healthcare workers, and anyone interested in medical science. Shomu s Biology",
     "lessons": [
         {
-            "title": "برومو كورس كمبيوتر",
-            "link": "https://www.m3aarf.com/lesson/184366-video",
-            "duration": "1 دقيقة"
+            "title": "Best antibiotics for cough and cold Dosage side effects",
+            "link": "https://www.mindluster.com/lesson/407918-video",
+            "duration": "00:05:33"
         },
         {
-            "title": "مكونات الكمبيوتر | كورس كمبيوتر | الاسكوله 2017 | المستوى الأول 4 8 | الحلقة الأولى",
-            "link": "https://www.m3aarf.com/lesson/184367-video",
-            "duration": "14 دقيقة"
+            "title": "Fast UTI Relief in 7 Days with These Powerful Antibiotics Best antibiotics for UTI",
+            "link": "https://www.mindluster.com/lesson/407919-video",
+            "duration": "00:04:31"
         },
         {
-            "title": "التعامل مع سطح المكتب | كورس كمبيوتر | الاسكوله 2017 | المستوى الأول 4 8 | الحلقة الثانية",
-            "link": "https://www.m3aarf.com/lesson/184368-video",
-            "duration": "25 دقيقة"
+            "title": "Best antibiotics for typhoid infection Typhoid fever antibiotics",
+            "link": "https://www.mindluster.com/lesson/407920-video",
+            "duration": "00:05:04"
+        },
+        {
+            "title": "Best antibiotics for tooth infection Dant infection ka antibiotics antibiotics for tooth pain",
+            "link": "https://www.mindluster.com/lesson/407921-video",
+            "duration": "00:05:14"
+        },
+        {
+            "title": "Best antibiotics for throat infection Antibiotics for pharyngitis Sore throat treatment",
+            "link": "https://www.mindluster.com/lesson/407922-video",
+            "duration": "00:05:08"
+        },
+        {
+            "title": "Best antibiotics for lung infection Antibiotics for bronchitis",
+            "link": "https://www.mindluster.com/lesson/407923-video",
+            "duration": "00:06:13"
+        },
+        {
+            "title": "Best antibiotics for kidney infection Antibiotics for kidney disease",
+            "link": "https://www.mindluster.com/lesson/407924-video",
+            "duration": "00:05:06"
+        },
+        {
+            "title": "Best antibiotics for intestinal infection antibiotics for stomach infection Diarrhea antibiotics",
+            "link": "https://www.mindluster.com/lesson/407925-video",
+            "duration": "00:06:27"
+        },
+        {
+            "title": "Best antibiotics for ear infection Antibiotic drops for ear infection",
+            "link": "https://www.mindluster.com/lesson/407926-video",
+            "duration": "00:03:43"
+        },
+        {
+            "title": "Antibiotic injections for fever Why antibiotic in cold and fever",
+            "link": "https://www.mindluster.com/lesson/407927-video",
+            "duration": "00:04:17"
+        },
+        {
+            "title": "Best antibiotics for cough and cold in babies Antibiotic syrup bacchon ke liye",
+            "link": "https://www.mindluster.com/lesson/407928-video",
+            "duration": "00:04:27"
         }
     ],
-    "lesson_count": 3,
-    "intro_video": "https://www.m3aarf.com/lesson/184366-video",
-    "thumbnail_id": 30544
+    "intro_video": "https://www.mindluster.com/lesson/407918-video",
+    "thumbnail": "https://img.youtube.com/vi/gjZh9wX497g/hqdefault.jpg",
+    "thumbnail_id": 31795
 }
